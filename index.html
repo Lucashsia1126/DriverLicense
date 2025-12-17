@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lalamove 證件拍攝 (V8 極速引擎)</title>
+    <title>Lalamove 證件拍攝 </title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     
@@ -106,7 +106,7 @@
 </div>
 
 <div class="container">
-    <h1>Lalamove 證件拍攝助手 (V8 極速)</h1>
+    <h1>Lalamove 證件拍攝助手 v8.1 </h1>
 
     <div class="input-group highlight">
         <label>步驟 1：輸入姓名</label>
@@ -185,7 +185,7 @@
     const modal = document.getElementById('cropperModal');
     const imageElement = document.getElementById('imageToCrop');
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const WATERMARK_TEXT = "僅供Lalamove 租車專案使用";
+    const WATERMARK_TEXT = "僅供 Lalamove 租車專案使用";
     let activeObjectUrl = null; // 用於追蹤並釋放記憶體
 
     function showLoading(text) { 
@@ -326,11 +326,11 @@
             
             // 黑邊框 (0.3 = 30% 透明度)
             ctx.lineWidth = fontSize / 12;
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; 
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; 
             ctx.strokeText(WATERMARK_TEXT, 0, 0);
 
             // 白字 (0.3 = 30% 透明度)
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; 
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; 
             ctx.fillText(WATERMARK_TEXT, 0, 0);
             
             ctx.restore();
