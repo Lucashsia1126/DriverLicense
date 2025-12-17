@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lalamove 證件拍攝 (V8 極速引擎)</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 100px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 { text-align: center; color: #444; font-size: 20px; margin-bottom: 20px; }
+
+        .input-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            background-color: #fcfcfc;
+        }
+        .input-group.highlight {
+            background-color: #e8f4ff;
+            border-color: #b3d7ff;
+        }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; font-size: 15px; }
+
+        input[type="text"] {
+            width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;
+        }
+        input[type="file"] { display: none; }
+
+        .upload-btn {
+            display: block; width: 100%; padding: 12px; background-color: #007aff; color: white;
+            text-align: center; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-btn:hover { background-color: #0069d9; }
+        
+        .preview-box { margin-top: 10px; text-align: center; display: none; }
+        .preview-box img { max-width: 100%; border-radius: 4px; border: 1px solid #ddd; }
+        .success-msg { color: #28a745; font-size: 13px; margin-bottom: 5px; font-weight: bold; }
+
+        /* --- 裁切視窗 --- */
+        #cropperModal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; z-index: 9999;
+            display: none; flex-direction: column;
+        }
+        .cropper-wrapper {
+            flex: 1; min-height: 0; overflow: hidden; position: relative; background-color: #000;
+        }
+        #imageToCrop { display: block; max-width: 100%; max-height: 100%; }
+        
+        .cropper-controls {
+            height: 80px; background: #111; display: flex;
+            justify-content: space-between; align-items: center; padding: 0 15px;
+            flex-shrink: 0; z-index: 10000;
+        }
+        .cropper-btn {
+            padding: 10px 16px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; color: #fff; cursor: pointer;
+        }
+        .btn-cancel { background: #555; }
+        .btn-rotate { background: #17a2b8; }
+        .btn-confirm { background: #28a745; padding: 10px 24px; font-size: 16px; }
+
+        /* --- Loading 遮罩 --- */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 20000; display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #f3f3f3; border-top: 4px solid #007aff;
+            border-radius: 50%; animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        .loading-text { color: #fff; font-weight: bold; font-size: 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">極速載入中...</div>
+</div>
+
+<div class="container">
+    <h1>Lalamove 證件拍攝助手 (V8 極速)</h1>
+
+    <div class="input-group highlight">
+        <label>步驟 1：輸入姓名</label>
+        <input type="text" id="userName" placeholder="請輸入司機姓名">
+    </div>
+
+    <div class="input-group">
+        <label>1. 身份證 (正面)</label>
+        <label for="input_id_front" class="upload-btn">📸 拍攝並裁切</label>
+        <input type="file" id="input_id_front" accept="image/*" onchange="handleFileSelect(this, '身份證', '正面')">
+        <div class="preview-box" id="preview_id_front">
+            <div class="success-msg">✅ 完成</div>
+            <img id="img_id_front">
+        </div>
+    </div>
+    
+    <div class="input-group">
+        <label>2. 身份證 (反面)</label>
+        <label for="input_id_back" class="upload-btn">📸 拍攝並裁切</label>
+        <input type="file" id="input_id_back" accept="image/*" onchange="handleFileSelect(this, '身份證', '反面')">
+        <div class="preview-box" id="preview_id_back">
+            <div class="success-msg">✅ 完成</div>
+            <img id="img_id_back">
+        </div>
+    </div>
+    
+    <div class="input-group">
+        <label>3. 職業駕照 (正面)</label>
+        <label for="input_pro_front" class="upload-btn">📸 拍攝並裁切</label>
+        <input type="file" id="input_pro_front" accept="image/*" onchange="handleFileSelect(this, '職業駕照', '正面')">
+        <div class="preview-box" id="preview_pro_front">
+            <div class="success-msg">✅ 完成</div>
+            <img id="img_pro_front">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>4. 職業駕照 (反面)</label>
+        <label for="input_pro_back" class="upload-btn">📸 拍攝並裁切</label>
+        <input type="file" id="input_pro_back" accept="image/*" onchange="handleFileSelect(this, '職業駕照', '反面')">
+        <div class="preview-box" id="preview_pro_back">
+            <div class="success-msg">✅ 完成</div>
+            <img id="img_pro_back">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>5. 駕照正面 (無職業駕照者)</label>
+        <label for="input_std_front" class="upload-btn">📸 拍攝並裁切</label>
+        <input type="file" id="input_std_front" accept="image/*" onchange="handleFileSelect(this, '駕照', '正面')">
+        <div class="preview-box" id="preview_std_front">
+            <div class="success-msg">✅ 完成</div>
+            <img id="img_std_front">
+        </div>
+    </div>
+</div>
+
+<div id="cropperModal">
+    <div class="cropper-wrapper">
+        <img id="imageToCrop" src="">
+    </div>
+    <div class="cropper-controls">
+        <button class="cropper-btn btn-cancel" onclick="cancelCropping()">取消</button>
+        <button class="cropper-btn btn-rotate" onclick="rotateImage()">↻ 旋轉</button>
+        <button class="cropper-btn btn-confirm" onclick="confirmCropping()">確認</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<script>
+    let cropper = null;
+    let currentInputId = '';
+    let currentDocType = '';
+    let currentSide = '';
+    const modal = document.getElementById('cropperModal');
+    const imageElement = document.getElementById('imageToCrop');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const WATERMARK_TEXT = "僅供Lalamove 租車專案使用";
+    let activeObjectUrl = null; // 用於追蹤並釋放記憶體
+
+    function showLoading(text) { 
+        if(text) document.querySelector('.loading-text').textContent = text;
+        loadingOverlay.style.display = 'flex'; 
+    }
+    function hideLoading() { loadingOverlay.style.display = 'none'; }
+
+    function handleFileSelect(input, docType, side) {
+        const userName = document.getElementById('userName').value.trim();
+        if (!userName) {
+            alert("⚠️ 請先在最上方輸入姓名！");
+            input.value = '';
+            document.getElementById('userName').focus();
+            return;
+        }
+
+        if (input.files && input.files[0]) {
+            showLoading("載入中..."); 
+            const file = input.files[0];
+            currentInputId = input.id;
+            currentDocType = docType;
+            currentSide = side;
+            
+            // 讓 UI 有時間更新，使用 setTimeout
+            setTimeout(() => {
+                compressAndInit(file);
+            }, 10);
+        }
+        input.value = '';
+    }
+
+    // V8 極速核心：使用 createObjectURL + Blob，不使用 base64 string
+    function compressAndInit(file) {
+        if (activeObjectUrl) URL.revokeObjectURL(activeObjectUrl); // 清除舊記憶體
+
+        const img = new Image();
+        activeObjectUrl = URL.createObjectURL(file);
+        
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 預覽圖縮小到 960px，速度最快，且手機裁切畫質足夠
+            const MAX_WIDTH = 960;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // 釋放原始大圖連結
+            URL.revokeObjectURL(activeObjectUrl);
+
+            // V8 關鍵優化：轉成 Blob (二進制) 而不是 DataURL (字串)
+            // 這是速度提升的關鍵
+            canvas.toBlob((blob) => {
+                if(blob) {
+                    activeObjectUrl = URL.createObjectURL(blob);
+                    startCropping(activeObjectUrl);
+                } else {
+                    alert("圖片處理錯誤");
+                    hideLoading();
+                }
+            }, 'image/jpeg', 0.8); // 預覽畫質 0.8
+        };
+        
+        img.onerror = function() {
+            alert("圖片讀取失敗");
+            hideLoading();
+        };
+        img.src = activeObjectUrl;
+    }
+
+    function startCropping(imageSrc) {
+        imageElement.src = imageSrc;
+        modal.style.display = 'flex';
+        
+        if (cropper) cropper.destroy();
+
+        cropper = new Cropper(imageElement, {
+            aspectRatio: 85.6 / 54,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.9,
+            background: false,
+            responsive: true,
+            ready: function() {
+                hideLoading();
+            }
+        });
+    }
+
+    function rotateImage() {
+        if (cropper) cropper.rotate(90);
+    }
+
+    function cancelCropping() {
+        modal.style.display = 'none';
+        if (cropper) cropper.destroy();
+        cropper = null;
+        if (activeObjectUrl) URL.revokeObjectURL(activeObjectUrl);
+        hideLoading();
+    }
+
+    function confirmCropping() {
+        if (!cropper) return;
+        showLoading("產生圖片中...");
+
+        setTimeout(() => {
+            const croppedCanvas = cropper.getCroppedCanvas({
+                width: 1200, // 最終輸出寬度
+                imageSmoothingQuality: 'high',
+            });
+
+            const finalCanvas = document.createElement('canvas');
+            const ctx = finalCanvas.getContext('2d');
+            finalCanvas.width = croppedCanvas.width;
+            finalCanvas.height = croppedCanvas.height;
+
+            ctx.drawImage(croppedCanvas, 0, 0);
+
+            // --- V7/V8 透明度修正 (30% 透明度 + 黑框白字) ---
+            ctx.save();
+            ctx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+            ctx.rotate(-25 * Math.PI / 180);
+            
+            const fontSize = Math.floor(finalCanvas.height / 12);
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 黑邊框 (0.3 = 30% 透明度)
+            ctx.lineWidth = fontSize / 12;
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; 
+            ctx.strokeText(WATERMARK_TEXT, 0, 0);
+
+            // 白字 (0.3 = 30% 透明度)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; 
+            ctx.fillText(WATERMARK_TEXT, 0, 0);
+            
+            ctx.restore();
+            // ----------------------------------
+
+            // 下載
+            const dataURL = finalCanvas.toDataURL('image/jpeg', 0.9);
+            
+            const previewImgId = currentInputId.replace('input_', 'img_');
+            const previewBoxId = currentInputId.replace('input_', 'preview_');
+            document.getElementById(previewImgId).src = dataURL;
+            document.getElementById(previewBoxId).style.display = 'block';
+
+            const userName = document.getElementById('userName').value.trim();
+            const fileName = `${userName}_${currentDocType}_${currentSide}.jpg`;
+            
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = fileName;
+            
+            cancelCropping();
+            
+            setTimeout(() => {
+                link.click();
+                hideLoading();
+            }, 100);
+        }, 20);
+    }
+</script>
+
+</body>
+</html>
