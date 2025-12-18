@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lalamove 證件拍攝 (V11 批次版)</title>
+    <title>Lalamove 證件拍攝 (V12)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     
     <style>
-        /* --- V11 新增：CSS 變數定義 (Lalamove 橘色系) --- */
+        /* --- V11/V12 CSS 變數定義 (Lalamove 橘色系) --- */
         :root {
-            --primary-orange: #ff6600;       /* Lalamove 標準橘 */
-            --primary-orange-hover: #e55c00; /* 深橘色 (Hover用) */
-            --light-orange-bg: #fff5f0;      /* 淺橘色背景 */
-            --orange-border: #ffcc99;        /* 橘色邊框 */
+            --primary-orange: #ff6600;       
+            --primary-orange-hover: #e55c00; 
+            --light-orange-bg: #fff5f0;      
+            --orange-border: #ffcc99;        
             --text-dark: #333;
             --grey-btn: #6c757d;
         }
@@ -34,7 +34,6 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            /* 頂部增加一條橘色線條裝飾 */
             border-top: 4px solid var(--primary-orange);
         }
 
@@ -48,7 +47,6 @@
             background-color: #fcfcfc;
             transition: all 0.3s;
         }
-        /* V11 修改：高亮色系改為淺橘色 */
         .input-group.highlight {
             background-color: var(--light-orange-bg);
             border-color: var(--orange-border);
@@ -64,7 +62,6 @@
         }
         input[type="file"] { display: none; }
 
-        /* V11 修改：上傳按鈕橘色化 */
         .upload-btn {
             display: block; width: 100%; padding: 12px; background-color: var(--primary-orange); color: white;
             text-align: center; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;
@@ -98,11 +95,10 @@
             transition: background 0.2s;
         }
         .btn-dl { background-color: var(--grey-btn); } 
-        /* V11 修改：個別分享按鈕也改為橘色，保持主題一致 */
         .btn-share { background-color: var(--primary-orange); } 
         .btn-share:hover { background-color: var(--primary-orange-hover); }
 
-        /* --- V11 新增：底部批次操作區樣式 --- */
+        /* --- 底部批次操作區樣式 --- */
         .batch-actions-area {
             margin-top: 30px;
             padding-top: 25px;
@@ -163,12 +159,10 @@
             padding: 10px 16px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; color: #fff; cursor: pointer;
         }
         .btn-cancel { background: #555; }
-        /* 旋轉按鈕保留冷色調以示區別，或也可改為深灰色 */
         .btn-rotate { background: #17a2b8; } 
-        /* V11 修改：確認按鈕橘色化 */
         .btn-confirm { background: var(--primary-orange); padding: 10px 24px; font-size: 16px; }
 
-        /* --- Loading 遮罩 --- */
+        /* --- Loading --- */
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85);
@@ -178,7 +172,6 @@
         .spinner {
             width: 40px; height: 40px;
             border: 4px solid #f3f3f3; 
-            /* V11 修改：Loading 動畫橘色化 */
             border-top: 4px solid var(--primary-orange);
             border-radius: 50%; animation: spin 1s linear infinite;
             margin-bottom: 15px;
@@ -196,7 +189,7 @@
 </div>
 
 <div class="container">
-    <h1>🚚 Lalamove 證件拍攝助手 (V11)</h1>
+    <h1>🚚 Lalamove 證件拍攝助手 (V12)</h1>
 
     <div class="input-group highlight">
         <label>步驟 1：輸入姓名 (必填)</label>
@@ -305,13 +298,10 @@
     const WATERMARK_TEXT = "僅供Lalamove 租車專案使用";
     let activeObjectUrl = null;
 
-    // --- V11 新增：更新批次按鈕狀態 ---
     function updateBatchButtonState() {
         const count = Object.keys(processedFiles).length;
         const btn = document.getElementById('batchShareBtn');
-        // 更新按鈕文字顯示數量
         btn.innerHTML = `<span style="font-size: 24px;">📤</span> 批次分享全部 (${count})`;
-        // 如果數量大於 0 則啟用按鈕，否則禁用
         btn.disabled = count === 0;
     }
 
@@ -350,7 +340,7 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            const MAX_WIDTH = 1280; // 稍微提高預覽解析度
+            const MAX_WIDTH = 1280; 
             let width = img.width;
             let height = img.height;
 
@@ -381,7 +371,7 @@
         modal.style.display = 'flex';
         if (cropper) cropper.destroy();
         cropper = new Cropper(imageElement, {
-            aspectRatio: 85.6 / 54, // ID card ratio
+            aspectRatio: 85.6 / 54, 
             viewMode: 1,
             dragMode: 'move',
             autoCropArea: 0.9,
@@ -416,7 +406,7 @@
             finalCanvas.height = croppedCanvas.height;
             ctx.drawImage(croppedCanvas, 0, 0);
 
-            // --- 浮水印繪製 ---
+            // --- 浮水印 ---
             ctx.save();
             ctx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
             ctx.rotate(-25 * Math.PI / 180);
@@ -427,44 +417,39 @@
             ctx.textBaseline = 'middle';
             
             ctx.lineWidth = fontSize / 12;
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)'; // 稍微加深一點
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.strokeText(WATERMARK_TEXT, 0, 0);
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; 
             ctx.fillText(WATERMARK_TEXT, 0, 0);
             ctx.restore();
-            // ----------------
+            // -------------
 
             finalCanvas.toBlob(function(blob) {
                 const key = currentInputId.replace('input_', '');
                 const userName = document.getElementById('userName').value.trim();
-                // 檔名格式優化
                 const fileName = `Lalamove_${userName}_${currentDocType}_${currentSide}.jpg`;
 
-                // 存入全域物件
                 processedFiles[key] = {
                     blob: blob,
                     fileName: fileName
                 };
 
-                // 更新畫面
                 const url = URL.createObjectURL(blob);
                 document.getElementById('img_' + key).src = url;
                 document.getElementById('preview_' + key).style.display = 'block';
                 document.getElementById('actions_' + key).style.display = 'flex';
 
-                // V11 重要：更新批次按鈕狀態
                 updateBatchButtonState();
 
                 cancelCropping();
                 hideLoading();
 
-            }, 'image/jpeg', 0.92); // 提高一點輸出品質
+            }, 'image/jpeg', 0.92);
 
         }, 50);
     }
 
-    // --- 功能：個別下載 ---
     function triggerDownload(key) {
         const fileData = processedFiles[key];
         if (!fileData) return;
@@ -476,7 +461,6 @@
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
-    // --- 功能：個別分享 ---
     async function triggerShare(key) {
         const fileData = processedFiles[key];
         if (!fileData) return;
@@ -484,9 +468,8 @@
             try {
                 const file = new File([fileData.blob], fileData.fileName, { type: 'image/jpeg' });
                 await navigator.share({
-                    files: [file],
-                    title: '證件分享',
-                    text: fileData.fileName
+                    files: [file]
+                    // V12: 單檔分享也不帶 text，以防萬一
                 });
             } catch (error) {
                 if (error.name !== 'AbortError') console.error('分享失敗', error);
@@ -496,48 +479,43 @@
         }
     }
 
-    // --- V11 新增功能：批次分享全部 ---
     async function triggerBatchShare() {
-        // 1. 將所有已處理的 Blob 轉換為 File 陣列
         const filesArray = [];
         for (const key in processedFiles) {
             if (processedFiles.hasOwnProperty(key)) {
                 const fileData = processedFiles[key];
-                // 建立 File 物件
                 const file = new File([fileData.blob], fileData.fileName, { type: 'image/jpeg' });
                 filesArray.push(file);
             }
         }
 
-        // 2. 防呆檢查
         if (filesArray.length === 0) {
             alert("尚未處理任何照片！");
             return;
         }
 
-        // 3. 檢查瀏覽器是否支援批次分享
         if (navigator.share && navigator.canShare && navigator.canShare({ files: filesArray })) {
             try {
                 showLoading("準備批次分享...");
-                // 呼叫原生分享選單
+                
+                // V12 重要修改：移除 text 屬性，避免 Google Drive 產生 .txt 檔
                 await navigator.share({
                     files: filesArray,
-                    title: 'Lalamove 證件批次上傳',
-                    text: `司機 ${document.getElementById('userName').value} 的 ${filesArray.length} 張證件照片`
+                    title: 'Lalamove 證件批次上傳'
+                    // text: '...' <--- 已移除此行
                 });
+                
                 console.log('批次分享成功');
             } catch (error) {
-                // 使用者取消分享不視為錯誤，其他錯誤才跳提示
                 if (error.name !== 'AbortError') {
                     console.error('批次分享失敗', error);
-                    alert("分享過程中發生錯誤，請稍後再試，或改用個別下載。");
+                    alert("分享過程中發生錯誤，請稍後再試。");
                 }
             } finally {
                 hideLoading();
             }
         } else {
-            // 若不支援，提示使用者
-            alert("您的手機或瀏覽器不支援一次分享多個檔案。\n\n請使用上方個別照片的「⬇️ 下載」按鈕，再手動上傳。");
+            alert("您的手機或瀏覽器不支援一次分享多個檔案，請改用個別下載。");
         }
     }
 </script>
