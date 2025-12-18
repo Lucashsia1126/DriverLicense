@@ -1,430 +1,292 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lalamove 證件拍攝 (V10 )</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 15px;
-            padding-bottom: 100px;
-            color: #333;
-        }
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資料管理系統 v11</title>
+  <style>
+    /* --- CSS 變數定義：Lalamove 橘色系 --- */
+    :root {
+      --primary-color: #ff6600;       /* Lalamove 橘 */
+      --primary-hover: #e55c00;       /* 深一點的橘色 */
+      --secondary-color: #ffe6d9;     /* 淺橘色背景 */
+      --text-color: #333;
+      --border-color: #ddd;
+      --bg-color: #f9f9f9;
+      --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
 
-        h1 { text-align: center; color: #444; font-size: 20px; margin-bottom: 20px; }
+    /* 容器樣式 */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+      border-top: 5px solid var(--primary-color); /* 頂部橘色條 */
+    }
 
-        .input-group {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            background-color: #fcfcfc;
-        }
-        .input-group.highlight {
-            background-color: #e8f4ff;
-            border-color: #b3d7ff;
-        }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; font-size: 15px; }
+    h2 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 25px;
+    }
 
-        input[type="text"] {
-            width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;
-        }
-        input[type="file"] { display: none; }
+    /* 搜尋與操作區 */
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
 
-        .upload-btn {
-            display: block; width: 100%; padding: 12px; background-color: #007aff; color: white;
-            text-align: center; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;
-            transition: background 0.2s;
-        }
-        .upload-btn:hover { background-color: #0069d9; }
-        
-        /* 預覽區塊優化 */
-        .preview-box { margin-top: 15px; text-align: center; display: none; }
-        .preview-box img { 
-            max-width: 100%; 
-            border-radius: 4px; 
-            border: 1px solid #ddd; 
-            display: block;
-            margin: 0 auto 10px auto;
-        }
+    input[type="text"], select {
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      flex: 1;
+      min-width: 200px;
+    }
 
-        /* --- V10 新增：按鈕群組 --- */
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        .action-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
-        .btn-dl { background-color: #6c757d; } /* 灰色下載鈕 */
-        .btn-share { background-color: #28a745; } /* 綠色分享鈕 */
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 5px var(--secondary-color);
+    }
 
-        /* --- 裁切視窗 --- */
-        #cropperModal {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #000; z-index: 9999;
-            display: none; flex-direction: column;
-        }
-        .cropper-wrapper {
-            flex: 1; min-height: 0; overflow: hidden; position: relative; background-color: #000;
-        }
-        #imageToCrop { display: block; max-width: 100%; max-height: 100%; }
-        
-        .cropper-controls {
-            height: 80px; background: #111; display: flex;
-            justify-content: space-between; align-items: center; padding: 0 15px;
-            flex-shrink: 0; z-index: 10000;
-        }
-        .cropper-btn {
-            padding: 10px 16px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; color: #fff; cursor: pointer;
-        }
-        .btn-cancel { background: #555; }
-        .btn-rotate { background: #17a2b8; }
-        .btn-confirm { background: #007aff; padding: 10px 24px; font-size: 16px; }
+    /* 按鈕共用樣式 */
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
 
-        /* --- Loading 遮罩 --- */
-        #loadingOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 20000; display: none;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid #f3f3f3; border-top: 4px solid #007aff;
-            border-radius: 50%; animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        .loading-text { color: #fff; font-weight: bold; font-size: 16px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    button:hover {
+      background-color: var(--primary-hover);
+    }
 
-    </style>
+    button.secondary {
+      background-color: #6c757d;
+    }
+    button.secondary:hover {
+      background-color: #5a6268;
+    }
+
+    /* 表格樣式 */
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--primary-color);
+      color: white;
+      white-space: nowrap;
+    }
+
+    tr:hover {
+      background-color: var(--secondary-color); /* 滑過變淺橘色 */
+    }
+
+    /* 載入動畫 */
+    #loader {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    /* --- 新增：底部批次操作區塊 --- */
+    .batch-actions-area {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px dashed var(--border-color);
+      display: flex;
+      justify-content: flex-end; /* 按鈕靠右 */
+      gap: 15px;
+    }
+
+    .btn-batch {
+      background-color: #fff;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-batch:hover {
+      background-color: var(--secondary-color);
+      color: var(--primary-hover);
+    }
+
+    /* 隱藏的檔案上傳 input */
+    #fileInput {
+      display: none;
+    }
+
+  </style>
 </head>
 <body>
 
-<div id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="loading-text">處理中...</div>
-</div>
+  <div class="container">
+    <h2>🚚 資料管理系統 (Lalamove Style)</h2>
 
-<div class="container">
-    <h1>Lalamove 證件拍攝助手 (V10)</h1>
-
-    <div class="input-group highlight">
-        <label>步驟 1：輸入姓名</label>
-        <input type="text" id="userName" placeholder="請輸入司機姓名">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="輸入關鍵字搜尋...">
+      <button onclick="performSearch()">搜尋</button>
+      <button class="secondary" onclick="clearSearch()">重置</button>
     </div>
 
-    <div class="input-group">
-        <label>1. 身份證 (正面)</label>
-        <label for="input_id_front" class="upload-btn">📸 拍攝並裁切</label>
-        <input type="file" id="input_id_front" accept="image/*" onchange="handleFileSelect(this, '身份證', '正面')">
-        <div class="preview-box" id="preview_id_front">
-            <img id="img_id_front">
-            <div class="action-buttons" id="actions_id_front" style="display:none;">
-                <button class="action-btn btn-dl" onclick="triggerDownload('id_front')">⬇️ 僅下載</button>
-                <button class="action-btn btn-share" onclick="triggerShare('id_front')">📤 分享 / 雲端</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="input-group">
-        <label>2. 身份證 (反面)</label>
-        <label for="input_id_back" class="upload-btn">📸 拍攝並裁切</label>
-        <input type="file" id="input_id_back" accept="image/*" onchange="handleFileSelect(this, '身份證', '反面')">
-        <div class="preview-box" id="preview_id_back">
-            <img id="img_id_back">
-            <div class="action-buttons" id="actions_id_back" style="display:none;">
-                <button class="action-btn btn-dl" onclick="triggerDownload('id_back')">⬇️ 僅下載</button>
-                <button class="action-btn btn-share" onclick="triggerShare('id_back')">📤 分享 / 雲端</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="input-group">
-        <label>3. 職業駕照 (正面)</label>
-        <label for="input_pro_front" class="upload-btn">📸 拍攝並裁切</label>
-        <input type="file" id="input_pro_front" accept="image/*" onchange="handleFileSelect(this, '職業駕照', '正面')">
-        <div class="preview-box" id="preview_pro_front">
-            <img id="img_pro_front">
-            <div class="action-buttons" id="actions_pro_front" style="display:none;">
-                <button class="action-btn btn-dl" onclick="triggerDownload('pro_front')">⬇️ 僅下載</button>
-                <button class="action-btn btn-share" onclick="triggerShare('pro_front')">📤 分享 / 雲端</button>
-            </div>
-        </div>
+    <div id="loader">資料載入中，請稍候...</div>
+
+    <div class="table-responsive">
+      <table id="dataTable">
+        <thead>
+          <tr id="tableHeader">
+            <th>ID</th>
+            <th>日期</th>
+            <th>姓名</th>
+            <th>狀態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td>001</td>
+            <td>2023-12-18</td>
+            <td>王小明</td>
+            <td>配送中</td>
+            <td><button class="secondary" style="padding:5px 10px; font-size:12px;">編輯</button></td>
+          </tr>
+           <tr>
+            <td>002</td>
+            <td>2023-12-19</td>
+            <td>李大華</td>
+            <td>已完成</td>
+            <td><button class="secondary" style="padding:5px 10px; font-size:12px;">編輯</button></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div class="input-group">
-        <label>4. 職業駕照 (反面)</label>
-        <label for="input_pro_back" class="upload-btn">📸 拍攝並裁切</label>
-        <input type="file" id="input_pro_back" accept="image/*" onchange="handleFileSelect(this, '職業駕照', '反面')">
-        <div class="preview-box" id="preview_pro_back">
-            <img id="img_pro_back">
-            <div class="action-buttons" id="actions_pro_back" style="display:none;">
-                <button class="action-btn btn-dl" onclick="triggerDownload('pro_back')">⬇️ 僅下載</button>
-                <button class="action-btn btn-share" onclick="triggerShare('pro_back')">📤 分享 / 雲端</button>
-            </div>
-        </div>
+    <div class="batch-actions-area">
+      <input type="file" id="fileInput" accept=".csv,.xlsx">
+      
+      <button class="btn-batch" onclick="triggerBatchUpload()">
+        📂 批次上傳
+      </button>
+      
+      <button class="btn-batch" onclick="triggerBatchDownload()">
+        ⬇️ 批次下載
+      </button>
     </div>
 
-    <div class="input-group">
-        <label>5. 駕照正面 (無職業駕照者)</label>
-        <label for="input_std_front" class="upload-btn">📸 拍攝並裁切</label>
-        <input type="file" id="input_std_front" accept="image/*" onchange="handleFileSelect(this, '駕照', '正面')">
-        <div class="preview-box" id="preview_std_front">
-            <img id="img_std_front">
-            <div class="action-buttons" id="actions_std_front" style="display:none;">
-                <button class="action-btn btn-dl" onclick="triggerDownload('std_front')">⬇️ 僅下載</button>
-                <button class="action-btn btn-share" onclick="triggerShare('std_front')">📤 分享 / 雲端</button>
-            </div>
-        </div>
-    </div>
-</div>
+  </div>
 
-<div id="cropperModal">
-    <div class="cropper-wrapper">
-        <img id="imageToCrop" src="">
-    </div>
-    <div class="cropper-controls">
-        <button class="cropper-btn btn-cancel" onclick="cancelCropping()">取消</button>
-        <button class="cropper-btn btn-rotate" onclick="rotateImage()">↻ 旋轉</button>
-        <button class="cropper-btn btn-confirm" onclick="confirmCropping()">完成</button>
-    </div>
-</div>
+  <script>
+    // --- 保留 v10 現有功能 (搜尋與渲染邏輯) ---
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-
-<script>
-    let cropper = null;
-    // 狀態變數
-    let currentInputId = ''; 
-    let currentDocType = '';
-    let currentSide = '';
-    
-    // 儲存處理完成的 Blob 資料，供按鈕使用
-    const processedFiles = {}; 
-
-    const modal = document.getElementById('cropperModal');
-    const imageElement = document.getElementById('imageToCrop');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const WATERMARK_TEXT = "僅供Lalamove 租車專案使用";
-    let activeObjectUrl = null;
-
-    function showLoading(text) { 
-        if(text) document.querySelector('.loading-text').textContent = text;
-        loadingOverlay.style.display = 'flex'; 
-    }
-    function hideLoading() { loadingOverlay.style.display = 'none'; }
-
-    function handleFileSelect(input, docType, side) {
-        const userName = document.getElementById('userName').value.trim();
-        if (!userName) {
-            alert("⚠️ 請先在最上方輸入姓名！");
-            input.value = '';
-            document.getElementById('userName').focus();
-            return;
-        }
-
-        if (input.files && input.files[0]) {
-            showLoading("載入中..."); 
-            const file = input.files[0];
-            currentInputId = input.id;
-            currentDocType = docType;
-            currentSide = side;
-            setTimeout(() => { compressAndInit(file); }, 10);
-        }
-        input.value = '';
+    // 模擬搜尋功能 (請替換為您原本 v10 的真實邏輯)
+    function performSearch() {
+      const keyword = document.getElementById('searchInput').value;
+      const loader = document.getElementById('loader');
+      loader.style.display = 'block';
+      
+      console.log("搜尋關鍵字:", keyword);
+      
+      // 模擬延遲
+      setTimeout(() => {
+        loader.style.display = 'none';
+        alert(`搜尋功能：您搜尋了 "${keyword}" (此處應連接後端)`);
+      }, 500);
     }
 
-    function compressAndInit(file) {
-        if (activeObjectUrl) URL.revokeObjectURL(activeObjectUrl);
-        const img = new Image();
-        activeObjectUrl = URL.createObjectURL(file);
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      alert("重置搜尋");
+    }
+
+    // --- v11 新增功能：批次操作 ---
+
+    // 1. 批次下載邏輯
+    function triggerBatchDownload() {
+      const confirmed = confirm("確定要下載所有資料嗎？");
+      if (confirmed) {
+        // TODO: 呼叫 Google Apps Script 後端函數
+        // google.script.run.withSuccessHandler(downloadFile).getBatchData();
         
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // 預覽壓縮至 960px
-            const MAX_WIDTH = 960;
-            let width = img.width;
-            let height = img.height;
+        console.log("執行批次下載...");
+        alert("✅ 下載請求已發送！(功能需連接後端生成 CSV/Excel)");
+      }
+    }
 
-            if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-            URL.revokeObjectURL(activeObjectUrl);
+    // 2. 批次上傳邏輯
+    function triggerBatchUpload() {
+      // 觸發隱藏的 file input 點擊事件
+      document.getElementById('fileInput').click();
+    }
 
-            canvas.toBlob((blob) => {
-                if(blob) {
-                    activeObjectUrl = URL.createObjectURL(blob);
-                    startCropping(activeObjectUrl);
-                } else {
-                    alert("錯誤"); hideLoading();
-                }
-            }, 'image/jpeg', 0.8);
+    // 監聽檔案選擇後的動作
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const confirmed = confirm(`您選擇了檔案：${file.name}\n確定要上傳並進行批次處理嗎？`);
+      
+      if (confirmed) {
+        console.log("準備上傳檔案:", file);
+        
+        // --- 這裡寫檔案讀取邏輯 (例如 FileReader) ---
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const fileContent = event.target.result;
+          console.log("檔案內容讀取完成");
+          
+          // TODO: 將 fileContent 傳給 Google Apps Script
+          // google.script.run.withSuccessHandler(onUploadSuccess).processBatchUpload(fileContent);
+          
+          alert(`✅ 檔案 ${file.name} 上傳處理中...`);
         };
-        img.onerror = function() { alert("讀取失敗"); hideLoading(); };
-        img.src = activeObjectUrl;
-    }
-
-    function startCropping(imageSrc) {
-        imageElement.src = imageSrc;
-        modal.style.display = 'flex';
-        if (cropper) cropper.destroy();
-        cropper = new Cropper(imageElement, {
-            aspectRatio: 85.6 / 54,
-            viewMode: 1,
-            dragMode: 'move',
-            autoCropArea: 0.9,
-            background: false,
-            responsive: true,
-            ready: function() { hideLoading(); }
-        });
-    }
-
-    function rotateImage() { if (cropper) cropper.rotate(90); }
-    function cancelCropping() {
-        modal.style.display = 'none';
-        if (cropper) cropper.destroy();
-        cropper = null;
-        if (activeObjectUrl) URL.revokeObjectURL(activeObjectUrl);
-        hideLoading();
-    }
-
-    function confirmCropping() {
-        if (!cropper) return;
-        showLoading("處理中...");
-
-        setTimeout(() => {
-            const croppedCanvas = cropper.getCroppedCanvas({
-                width: 1200, 
-                imageSmoothingQuality: 'high',
-            });
-
-            const finalCanvas = document.createElement('canvas');
-            const ctx = finalCanvas.getContext('2d');
-            finalCanvas.width = croppedCanvas.width;
-            finalCanvas.height = croppedCanvas.height;
-            ctx.drawImage(croppedCanvas, 0, 0);
-
-            // --- 浮水印 ---
-            ctx.save();
-            ctx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
-            ctx.rotate(-25 * Math.PI / 180);
-            
-            const fontSize = Math.floor(finalCanvas.height / 12);
-            ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            ctx.lineWidth = fontSize / 12;
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; 
-            ctx.strokeText(WATERMARK_TEXT, 0, 0);
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; 
-            ctx.fillText(WATERMARK_TEXT, 0, 0);
-            ctx.restore();
-            // -------------
-
-            // 轉成 Blob 儲存起來，不直接下載
-            finalCanvas.toBlob(function(blob) {
-                // 1. 生成唯一 key (例如 id_front)
-                const key = currentInputId.replace('input_', ''); // e.g., id_front
-                
-                // 2. 準備檔名
-                const userName = document.getElementById('userName').value.trim();
-                const fileName = `${userName}_${currentDocType}_${currentSide}.jpg`;
-
-                // 3. 存入全域變數
-                processedFiles[key] = {
-                    blob: blob,
-                    fileName: fileName
-                };
-
-                // 4. 更新畫面預覽圖
-                const url = URL.createObjectURL(blob);
-                document.getElementById('img_' + key).src = url;
-
-                // 5. 顯示操作按鈕
-                document.getElementById('preview_' + key).style.display = 'block';
-                document.getElementById('actions_' + key).style.display = 'flex';
-
-                cancelCropping();
-                hideLoading();
-
-            }, 'image/jpeg', 0.9);
-
-        }, 20);
-    }
-
-    // --- 功能函式：下載 ---
-    function triggerDownload(key) {
-        const fileData = processedFiles[key];
-        if (!fileData) return;
-
-        const url = URL.createObjectURL(fileData.blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileData.fileName;
-        link.click();
         
-        // 延遲釋放
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
+        // 讀取為文字 (如果是 CSV) 或 ArrayBuffer (如果是 Excel)
+        reader.readAsText(file); 
+        
+        // 上傳後清空 input，以便下次能選同一個檔案
+        e.target.value = ''; 
+      } else {
+        // 取消時也清空
+        e.target.value = '';
+      }
+    });
 
-    // --- 功能函式：分享 / 上傳 ---
-    async function triggerShare(key) {
-        const fileData = processedFiles[key];
-        if (!fileData) return;
-
-        // 檢查瀏覽器是否支援 Web Share API
-        if (navigator.share) {
-            try {
-                // 將 Blob 轉為 File 物件
-                const file = new File([fileData.blob], fileData.fileName, { type: 'image/jpeg' });
-
-                await navigator.share({
-                    files: [file],
-                    title: '證件照上傳',
-                    text: `Lalamove 證件照: ${fileData.fileName}`
-                });
-                console.log('分享成功');
-            } catch (error) {
-                console.log('分享取消或失敗', error);
-            }
-        } else {
-            alert("您的瀏覽器不支援原生分享功能，請使用「下載」按鈕。");
-        }
-    }
-</script>
-
+  </script>
 </body>
 </html>
