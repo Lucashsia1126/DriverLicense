@@ -82,6 +82,7 @@
             display: flex;
             gap: 10px;
             justify-content: center;
+            margin-bottom: 8px;
         }
         .action-btn {
             flex: 1;
@@ -97,6 +98,13 @@
         .btn-dl { background-color: var(--grey-btn); } 
         .btn-share { background-color: var(--primary-orange); } 
         .btn-share:hover { background-color: var(--primary-orange-hover); }
+
+        /* --- 雲端上傳狀態提示樣式 --- */
+        .upload-status-text {
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
 
         /* --- 底部批次操作區樣式 --- */
         .batch-actions-area {
@@ -206,6 +214,7 @@
                 <button class="action-btn btn-dl" onclick="triggerDownload('id_front')">⬇️ 下載</button>
                 <button class="action-btn btn-share" onclick="triggerShare('id_front')">📤 分享</button>
             </div>
+            <div class="upload-status-text" id="status_id_front"></div>
         </div>
     </div>
     
@@ -219,6 +228,7 @@
                 <button class="action-btn btn-dl" onclick="triggerDownload('id_back')">⬇️ 下載</button>
                 <button class="action-btn btn-share" onclick="triggerShare('id_back')">📤 分享</button>
             </div>
+            <div class="upload-status-text" id="status_id_back"></div>
         </div>
     </div>
     
@@ -232,6 +242,7 @@
                 <button class="action-btn btn-dl" onclick="triggerDownload('pro_front')">⬇️ 下載</button>
                 <button class="action-btn btn-share" onclick="triggerShare('pro_front')">📤 分享</button>
             </div>
+            <div class="upload-status-text" id="status_pro_front"></div>
         </div>
     </div>
 
@@ -245,6 +256,7 @@
                 <button class="action-btn btn-dl" onclick="triggerDownload('pro_back')">⬇️ 下載</button>
                 <button class="action-btn btn-share" onclick="triggerShare('pro_back')">📤 分享</button>
             </div>
+            <div class="upload-status-text" id="status_pro_back"></div>
         </div>
     </div>
 
@@ -258,6 +270,7 @@
                 <button class="action-btn btn-dl" onclick="triggerDownload('std_front')">⬇️ 下載</button>
                 <button class="action-btn btn-share" onclick="triggerShare('std_front')">📤 分享</button>
             </div>
+            <div class="upload-status-text" id="status_std_front"></div>
         </div>
     </div>
 
@@ -284,6 +297,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
+    // ⚠️ 請將下方網址修改為你的 Google Apps Script (GAS) 部署後的 Web App 網址
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyfehKnaL-DcH6lp448A0nCSYRd3gJGdMgs5aUYUfGh67BdgCF2jI0ozX8rYkKzD26a/exec';
+
     let cropper = null;
     let currentInputId = ''; 
     let currentDocType = '';
@@ -441,13 +457,59 @@
                 document.getElementById('actions_' + key).style.display = 'flex';
 
                 updateBatchButtonState();
-
                 cancelCropping();
                 hideLoading();
+
+                // ☁️ 照片裁切完成後，自動發送上傳至 Google 雲端硬碟
+                autoUploadToDrive(key, blob, fileName);
 
             }, 'image/jpeg', 0.92);
 
         }, 50);
+    }
+
+    // --- 自動上傳至 Google Drive 函式 ---
+    function autoUploadToDrive(key, blob, fileName) {
+        const statusEl = document.getElementById('status_' + key);
+        if (statusEl) {
+            statusEl.style.color = '#ff6600';
+            statusEl.innerText = '☁️ 正在自動上傳至 Google 雲端...';
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            const base64Image = reader.result;
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    base64: base64Image,
+                    mimeType: 'image/jpeg',
+                    fileName: fileName
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    if (statusEl) {
+                        statusEl.style.color = 'green';
+                        statusEl.innerText = '✅ 已成功自動備份至 Google 雲端！';
+                    }
+                    console.log('雲端檔案連結:', data.fileUrl);
+                } else {
+                    throw new Error(data.message || '上傳失敗');
+                }
+            })
+            .catch(err => {
+                console.error('上傳至雲端失敗:', err);
+                if (statusEl) {
+                    statusEl.style.color = 'red';
+                    statusEl.innerText = '❌ 自動備份失敗，請檢查網路或 GAS 設定。';
+                }
+            });
+        };
+        reader.readAsDataURL(blob);
     }
 
     function triggerDownload(key) {
@@ -469,7 +531,6 @@
                 const file = new File([fileData.blob], fileData.fileName, { type: 'image/jpeg' });
                 await navigator.share({
                     files: [file]
-                    // V12: 單檔分享也不帶 text，以防萬一
                 });
             } catch (error) {
                 if (error.name !== 'AbortError') console.error('分享失敗', error);
@@ -497,14 +558,10 @@
         if (navigator.share && navigator.canShare && navigator.canShare({ files: filesArray })) {
             try {
                 showLoading("準備批次分享...");
-                
-                // V12 重要修改：移除 text 屬性，避免 Google Drive 產生 .txt 檔
                 await navigator.share({
                     files: filesArray,
                     title: 'Lalamove 證件批次上傳'
-                    // text: '...' <--- 已移除此行
                 });
-                
                 console.log('批次分享成功');
             } catch (error) {
                 if (error.name !== 'AbortError') {
